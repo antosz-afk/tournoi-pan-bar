@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournoi — Le Pan Bar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f0f0;
+    --muted: #888;
+    --accent: #e8c84a;
+    --accent2: #c9a92e;
+    --danger: #e05a4a;
+    --info: #4a9ee0;
+    --green: #4abf80;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--surface);
+  }
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--text); }
+  .subtitle { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+  /* ---- STEPS NAV ---- */
+  .steps-nav {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 0 1rem;
+  }
+  .step-item:first-child { padding-left: 0; }
+  .step-item.active { color: var(--accent); }
+  .step-item.done { color: var(--green); }
+  .step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; flex-shrink: 0;
+  }
+  .step-sep { color: var(--border2); font-size: 16px; }
+
+  /* ---- MAIN LAYOUT ---- */
+  main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+  /* ---- SECTION TITLE ---- */
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ---- SLIDERS & OPTIONS ---- */
+  .ctrl-group { margin-bottom: 1.25rem; }
+  .ctrl-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .ctrl-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .mode-selector {
+    display: flex;
+    background: var(--surface2);
+    padding: 4px;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+  }
+  .mode-option {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: calc(var(--radius) - 2px);
+    transition: all 0.15s;
+  }
+  .mode-option.active {
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  /* ---- METRICS ---- */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 1.5rem 0;
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .metric-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+  .metric-val { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 600; }
+  .metric-val.ok { color: var(--accent); }
+  .metric-val.warn { color: var(--danger); }
+  .metric-val.info { color: var(--info); }
+
+  /* ---- ALERTS ---- */
+  .alert {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; border-radius: var(--radius);
+    font-size: 13px; margin-bottom: 10px;
+  }
+  .alert-info { background: rgba(74,158,224,0.1); border: 1px solid rgba(74,158,224,0.25); color: #90c4f0; }
+
+  /* ---- BOX PREVIEW CHIPS ---- */
+  .box-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .box-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 6px 12px; font-size: 13px;
+  }
+  .box-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ---- BUTTONS ---- */
+  .btn-primary {
+    background: var(--accent); color: #111;
+    border: none; border-radius: var(--radius);
+    padding: 10px 22px; font-size: 14px; font-weight: 600;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+  .btn-secondary {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    padding: 10px 22px; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-secondary:hover { background: var(--surface); }
+
+  .btn-outline {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 8px 16px; font-size: 13px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  
+  .btn-danger-outline {
+    background: transparent; color: var(--danger);
+    border: 1px solid rgba(224,90,74,0.2); border-radius: var(--radius);
+    padding: 8px 16px; font-size: 13px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-danger-outline:hover { background: rgba(224,90,74,0.1); border-color: var(--danger); }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 1.5rem; }
+
+  /* ---- TEAMS FORM ---- */
+  .box-group { margin-bottom: 2rem; }
+  .box-group-header {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 1rem;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .team-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px;
+  }
+  .team-name-input {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    color: var(--text); font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 600; letter-spacing: 0.03em;
+    padding: 8px 12px; margin-bottom: 10px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .team-name-input:focus { border-color: var(--accent); }
+  .player-input {
+    width: 100%; background: transparent;
+    border: 0; border-bottom: 1px solid var(--border);
+    color: var(--text); font-size: 13px;
+    padding: 6px 4px; margin-bottom: 4px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .player-input:focus { border-bottom-color: var(--accent); }
+  .player-input::placeholder { color: var(--muted); }
+
+  /* ---- TABLEAUX ---- */
+  .gen-table-wrap { overflow-x: auto; margin-bottom: 2rem; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data th {
+    text-align: left; padding: 10px 12px;
+    background: var(--surface); color: var(--muted);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border2); font-weight: 500;
+  }
+  table.data td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .team-pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ---- BOX TABS ---- */
+  .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .tab-btn {
+    padding: 7px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--muted); transition: all 0.15s;
+  }
+  .tab-btn:hover { border-color: var(--border2); color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+
+  /* ---- BOX PANEL ---- */
+  .box-panel { display: none; }
+  .box-panel.active { display: block; }
+  .box-panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.25rem; }
+  .box-number { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 700; line-height: 1; }
+  .box-sub { font-size: 13px; color: var(--muted); }
+
+
+  /* ---- IMPORT TABS ---- */
+  .import-tabs {
+    display: flex; gap: 0; margin-bottom: 0;
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .import-tab {
+    flex: 1; padding: 9px 12px; background: transparent;
+    border: none; border-right: 1px solid var(--border2);
+    color: var(--muted); font-size: 13px; cursor: pointer;
+    transition: all 0.15s; text-align: center;
+  }
+  .import-tab:last-child { border-right: none; }
+  .import-tab.active { background: var(--accent); color: #111; font-weight: 600; }
+  .import-tab:not(.active):hover { background: var(--surface2); color: var(--text); }
+
+  .import-panel { display: none; margin-top: 10px; }
+  .import-panel.active { display: block; }
+
+  /* Zone coller */
+  .paste-textarea {
+    width: 100%; min-height: 120px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); color: var(--text);
+    font-size: 13px; padding: 10px 12px; resize: vertical;
+    outline: none; font-family: 'Barlow', sans-serif;
+    transition: border-color 0.15s; box-sizing: border-box;
+  }
+  .paste-textarea:focus { border-color: var(--accent); }
+  .paste-textarea::placeholder { color: var(--muted); }
+
+  /* Ajout manuel */
+  .manual-add-row {
+    display: flex; gap: 8px; margin-bottom: 8px;
+  }
+  .manual-add-row input {
+    flex: 1; padding: 8px 12px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); color: var(--text); font-size: 13px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .manual-add-row input:focus { border-color: var(--accent); }
+  .player-list-manual {
+    max-height: 200px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    margin-top: 8px;
+  }
+  .player-list-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 12px; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .player-list-item:last-child { border-bottom: none; }
+  .player-list-item span { flex: 1; }
+
+  /* ---- IMPORT EXCEL ---- */
+  .import-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .import-zone:hover, .import-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(232,200,74,0.05);
+  }
+  .import-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+  }
+  .import-icon { font-size: 32px; margin-bottom: 8px; }
+  .import-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .import-sub { font-size: 12px; color: var(--muted); }
+  .import-success {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(74,191,128,0.1); border: 1px solid rgba(74,191,128,0.3);
+    border-radius: var(--radius); padding: 10px 14px;
+    font-size: 13px; color: var(--green); margin-bottom: 1rem;
+  }
+
+  /* ---- DRAG & DROP ---- */
+  .player-row {
+    cursor: grab;
+    transition: opacity 0.15s, background 0.15s;
+    border-radius: 4px;
+  }
+  .player-row:active { cursor: grabbing; }
+  .player-row.dragging { opacity: 0.35; }
+  .player-row.drag-over-top { border-top: 2px solid var(--accent) !important; }
+  .player-row.drag-over-bottom { border-bottom: 2px solid var(--accent) !important; }
+
+  .team-card {
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .team-card[draggable="true"] { cursor: grab; }
+  .team-card[draggable="true"]:active { cursor: grabbing; }
+  .team-card.team-dragging { opacity: 0.35; }
+  .team-card.team-drag-over {
+    box-shadow: 0 0 0 2px var(--accent);
+    background: rgba(232,200,74,0.07);
+  }
+
+  .drag-handle {
+    cursor: grab; color: var(--muted); font-size: 12px;
+    padding: 0 4px; flex-shrink: 0; user-select: none;
+    line-height: 1;
+  }
+  .drag-handle:hover { color: var(--accent); }
+
+  /* Box name input */
+  .box-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 1px 4px;
+    outline: none;
+    width: 140px;
+    transition: border-color 0.15s;
+  }
+  .box-name-input:focus { border-bottom-color: var(--accent); }
+
+  .btn-del-box {
+    margin-left: auto;
+    background: none; border: 1px solid rgba(224,90,74,0.3);
+    border-radius: var(--radius); color: var(--danger);
+    font-size: 12px; padding: 3px 10px; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-del-box:hover { background: rgba(224,90,74,0.12); border-color: var(--danger); }
+
+  .team-drag-handle {
+    cursor: grab; color: var(--muted); font-size: 14px;
+    float: right; margin-top: -2px; user-select: none;
+    padding: 2px 4px; border-radius: 3px; transition: color 0.15s;
+  }
+  .team-drag-handle:hover { color: var(--accent); }
+
+  .drop-zone-empty {
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 8px; text-align: center;
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 4px;
+    transition: all 0.15s;
+  }
+  .drop-zone-empty.drag-over {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,200,74,0.06);
+  }
+
+  /* ---- PLAYER ROW (step 2) ---- */
+  .player-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .player-row .player-input { flex: 1; margin-bottom: 0; }
+  .btn-del-player {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 16px; line-height: 1;
+    padding: 2px 4px; border-radius: 4px; flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .btn-del-player:hover { color: var(--danger); }
+  .btn-add-player {
+    width: 100%; background: transparent;
+    border: 1px dashed var(--border2); border-radius: var(--radius);
+    color: var(--muted); font-size: 12px; padding: 5px;
+    cursor: pointer; margin-top: 6px; transition: all 0.15s;
+  }
+  .btn-add-player:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---- COLUMN PICKER ---- */
+  .col-picker {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 8px 12px;
+    color: var(--text); font-size: 13px; outline: none;
+    cursor: pointer;
+  }
+
+  /* ============================================================
+     FICHE A4 — LE PAN BAR  (vert forêt / or)
+     ============================================================ */
+
+  /* Palette */
+  :root {
+    --f-bg:       #1c3b1c;   /* vert forêt */
+    --f-bg2:      #163016;   /* vert plus sombre pour contraste */
+    --f-gold:     #d4af37;   /* or principal */
+    --f-gold-lt:  #f0d97a;   /* or clair pour grands titres */
+    --f-gold-dim: rgba(212,175,55,0.35);
+    --f-cream:    #f5e6a0;   /* crème pour noms d'équipes */
+    --f-bronze:   #b8975a;   /* bronze pour joueurs */
+  }
+
+  /* Fiche A4 — masquée à l'écran, visible à l'impression */
+  .fiche-a4 {
+    display: none;
+    width: 210mm;
+    min-height: 297mm;
+    background: var(--f-bg);
+    color: var(--f-gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    padding: 12mm 14mm 28mm;
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  /* ---- En-tête ---- */
+  .fiche-header {
+    text-align: center;
+    margin-bottom: 7mm;
+    padding-bottom: 5mm;
+    border-bottom: 2px solid var(--f-gold);
+  }
+  .fiche-star {
+    font-size: 20pt; color: var(--f-gold);
+    display: block; margin-bottom: 1mm; line-height: 1;
+  }
+  .fiche-tournoi {
+    font-size: 16pt; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--f-gold); display: block;
+    margin-bottom: 3mm; line-height: 1.1;
+  }
+  /* BOX X — gros titre avec ailes style militaire */
+  .fiche-box-wrap {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4mm; margin-bottom: 2mm;
+  }
+  .fiche-box-wing {
+    display: flex; align-items: center; gap: 1.5mm;
+  }
+  .fiche-box-wing span {
+    display: block; height: 2.5px;
+    background: var(--f-gold);
+    border-radius: 2px;
+  }
+  .fiche-box-wing span:nth-child(1) { width: 16mm; }
+  .fiche-box-wing span:nth-child(2) { width: 10mm; }
+  .fiche-box-wing span:nth-child(3) { width: 5mm; }
+  .fiche-box-wing.right span { order: 0; }
+  .fiche-box-wing.right { flex-direction: row-reverse; }
+  .fiche-box-num {
+    font-size: 52pt; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--f-gold-lt);
+    line-height: 0.95;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.5);
+  }
+  .fiche-divider {
+    display: flex; align-items: center; justify-content: center;
+    gap: 3mm; margin-top: 2mm;
+  }
+  .fiche-divider-line { flex: 1; max-width: 30mm; height: 1px; background: var(--f-gold-dim); }
+  .fiche-divider-diamond { font-size: 7pt; color: var(--f-gold); }
+
+  /* ---- Blocs (équipes, consignes) ---- */
+  .fiche-bloc {
+    border: 1.5px solid var(--f-gold);
+    border-radius: 5px;
+    margin-bottom: 5mm;
+    overflow: hidden;
+  }
+  .fiche-bloc-title {
+    background: var(--f-gold);
+    color: var(--f-bg);
+    text-align: center;
+    font-size: 11pt; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 2mm 4mm;
+  }
+  .fiche-bloc-body { padding: 3mm 6mm; }
+
+  /* ---- Lignes équipes ---- */
+  .fiche-team-row {
+    display: flex; align-items: flex-start; gap: 3.5mm;
+    padding: 3mm 0;
+    border-bottom: 1px solid var(--f-gold-dim);
+  }
+  .fiche-team-row:last-child { border-bottom: none; }
+  .fiche-team-num {
+    width: 7mm; height: 7mm; border-radius: 50%;
+    border: 1.5px solid var(--f-gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9pt; font-weight: 700; flex-shrink: 0;
+    color: var(--f-gold); background: var(--f-bg2);
+    margin-top: 0.5mm;
+  }
+  .fiche-team-content { flex: 1; }
+  .fiche-team-name {
+    font-size: 13pt; font-weight: 700;
+    color: var(--f-cream); display: block; line-height: 1.2;
+    letter-spacing: 0.03em;
+  }
+  .fiche-team-players {
+    font-size: 10pt; color: var(--f-bronze);
+    font-family: 'Barlow', sans-serif; font-weight: 400;
+    display: block; margin-top: 1mm; line-height: 1.3;
+  }
+
+  /* ---- Consignes ---- */
+  .fiche-consigne-row {
+    display: flex; align-items: flex-start; gap: 3.5mm;
+    padding: 2.5mm 0;
+    border-bottom: 1px solid var(--f-gold-dim);
+    font-family: 'Barlow', sans-serif;
+    font-size: 10.5pt; color: var(--f-cream); line-height: 1.4;
+  }
+  .fiche-consigne-row:last-child { border-bottom: none; }
+  .fiche-consigne-num {
+    width: 6mm; height: 6mm; border-radius: 50%;
+    border: 1.5px solid var(--f-gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8pt; font-weight: 700; flex-shrink: 0;
+    color: var(--f-gold); background: var(--f-bg2);
+    font-family: 'Barlow Condensed', sans-serif;
+    margin-top: 1mm;
+  }
+  .fiche-consigne-text { flex: 1; }
+  .fiche-consigne-text strong { color: var(--f-gold-lt); }
+
+  /* ---- Footer ---- */
+  .fiche-footer {
+    position: absolute; bottom: 8mm; left: 14mm; right: 14mm;
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--f-gold-dim); padding-top: 2.5mm;
+    font-size: 9pt; color: rgba(212,175,55,0.55);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .fiche-footer-dots {
+    display: flex; align-items: center; gap: 1.5mm;
+  }
+  .fiche-footer-dots span {
+    width: 5mm; height: 1px; background: var(--f-gold-dim);
+  }
+  .fiche-footer-dots span:first-child { width: 10mm; }
+
+  /* ---- Prévisualisation écran ---- */
+  .fiche-preview-wrap {
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid rgba(212,175,55,0.3);
+    flex-shrink: 0;
+    width: 280px; height: 396px;
+    background: var(--f-bg);
+  }
+  .fiche-preview-inner {
+    transform: scale(0.444);
+    transform-origin: top left;
+    width: 210mm;
+    pointer-events: none;
+  }
+
+  /* ---- FICHE RECAP ---- */
+  .fiche-recap {
+    display: none;            /* cachée à l'écran */
+    width: 210mm;
+    min-height: 297mm;
+    background: var(--f-bg);
+    color: var(--f-gold);
+    font-family: 'Barlow Condensed', sans-serif;
+    padding: 14mm 14mm 28mm;
+    position: relative;
+    box-sizing: border-box;
+  }
+  .recap-header {
+    text-align: center; margin-bottom: 8mm;
+    padding-bottom: 5mm; border-bottom: 2px solid var(--f-gold);
+  }
+  .recap-title {
+    font-size: 22pt; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--f-gold-lt);
+    display: block; line-height: 1;
+  }
+  .recap-sub {
+    font-size: 11pt; color: var(--f-gold); letter-spacing: 0.08em;
+    display: block; margin-top: 2mm;
+  }
+  .recap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5mm;
+  }
+  .recap-box-card {
+    border: 1.5px solid var(--f-gold);
+    border-radius: 5px; overflow: hidden;
+  }
+  .recap-box-header {
+    background: var(--f-gold); color: var(--f-bg);
+    font-size: 11pt; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 1.5mm 4mm; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .recap-box-body { padding: 2mm 4mm; }
+  .recap-team-line {
+    display: flex; align-items: baseline; gap: 2mm;
+    padding: 1.5mm 0; border-bottom: 1px solid var(--f-gold-dim);
+    font-size: 9.5pt;
+  }
+  .recap-team-line:last-child { border-bottom: none; }
+  .recap-team-num {
+    width: 5mm; height: 5mm; border-radius: 50%;
+    border: 1px solid var(--f-gold);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 7.5pt; font-weight: 700; flex-shrink: 0;
+    color: var(--f-gold); background: var(--f-bg2);
+  }
+  .recap-team-name { color: var(--f-cream); font-weight: 700; font-size: 10pt; }
+  .recap-team-players { color: var(--f-bronze); font-family: 'Barlow', sans-serif; font-size: 8.5pt; margin-left: 1mm; }
+
+  /* ---- PRINT ---- */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #fff; margin: 0; }
+    header, .steps-nav, .no-print, #step1, #step2,
+    #step3 > h2, #step3 > .gen-table-wrap, .tab-bar { display: none !important; }
+    #step3 { display: block !important; padding: 0; }
+    .box-panel { display: block !important; }
+
+    /* Récap — 1ère page */
+    .fiche-recap {
+      display: block !important;
+      page-break-after: always;
+      margin: 0;
+    }
+
+    /* Fiche box — 1 page exacte, jamais coupée */
+    .fiche-a4 {
+      display: block !important;
+      page-break-before: always;
+      page-break-after: always;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      height: 297mm;
+      overflow: hidden;      /* garantit qu'on ne déborde pas */
+      margin: 0;
+    }
+    main { padding: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Le Pan <span>Bar</span></div>
+  <div style="font-size:13px;color:var(--muted);margin-left:8px;">— Gestion tournoi ball trap</div>
+  <div class="subtitle" id="header-info"></div>
+</header>
+
+<nav class="steps-nav" aria-label="Étapes">
+  <div class="step-item active" id="snav-1"><span class="step-num">1</span> Configuration</div>
+  <span class="step-sep">›</span>
+  <div class="step-item" id="snav-2"><span class="step-num">2</span> Joueurs</div>
+  <span class="step-sep">›</span>
+  <div class="step-item" id="snav-3"><span class="step-num">3</span> Tableaux</div>
+</nav>
+
+<main>
+
+  <!-- ÉTAPE 1 -->
+  <section id="step1">
+    <h2 class="section-title">Configuration du tournoi</h2>
+
+    <!-- IMPORT JOUEURS — 3 modes -->
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Importer les joueurs</div>
+      <div class="import-tabs">
+        <button class="import-tab active" onclick="switchImportTab('file')">📂 Fichier Excel</button>
+        <button class="import-tab" onclick="switchImportTab('paste')">📋 Coller une liste</button>
+        <button class="import-tab" onclick="switchImportTab('manual')">✏️ Saisie manuelle</button>
+      </div>
+
+      <!-- TAB 1 : Fichier -->
+      <div id="import-panel-file" class="import-panel active">
+        <div id="import-zone" class="import-zone"
+          ondragover="event.preventDefault();this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handleDrop(event)" style="margin-bottom:0;">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
+          <div class="import-icon">📂</div>
+          <div class="import-title">Fichier Excel / CSV</div>
+          <div class="import-sub">Glisse ou clique pour choisir (.xlsx, .xls, .csv)</div>
+        </div>
+        <div id="col-picker-zone" style="display:none; margin-top:10px;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Quelle colonne contient les noms ?</div>
+          <select id="col-picker" class="col-picker" onchange="applyColumn()"></select>
+        </div>
+      </div>
+
+      <!-- TAB 2 : Coller -->
+      <div id="import-panel-paste" class="import-panel">
+        <textarea id="paste-input" class="paste-textarea"
+          placeholder="Colle ici ta liste depuis Google Sheets ou Excel&#10;Un nom par ligne :&#10;Martin Dupont&#10;Sophie Garcia&#10;..."
+          oninput="applyPaste()"></textarea>
+        <div id="paste-count" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+      </div>
+
+      <!-- TAB 3 : Manuel -->
+      <div id="import-panel-manual" class="import-panel">
+        <div class="manual-add-row">
+          <input id="manual-input" type="text" placeholder="Nom du joueur"
+            onkeydown="if(event.key==='Enter')addManualPlayer()">
+          <button class="btn-primary" onclick="addManualPlayer()" style="padding:8px 16px;font-size:13px;">Ajouter</button>
+        </div>
+        <div id="manual-player-list" class="player-list-manual" style="display:none;"></div>
+        <div id="manual-count" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+      </div>
+
+      <div id="import-result" style="display:none;margin-top:10px;"></div>
+    </div>
+
+    <div class="ctrl-group">
+      <div class="ctrl-label"><span>Nombre de joueurs</span><span class="ctrl-val" id="v-j">16</span></div>
+      <input type="range" id="r-j" min="2" max="150" value="16" step="1" oninput="calc(); saveConfig();">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label"><span>Joueurs par équipe</span><span class="ctrl-val" id="v-e">2</span></div>
+      <input type="range" id="r-e" min="1" max="10" value="2" step="1" oninput="calc(); saveConfig();">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label"><span>Boxes disponibles</span><span class="ctrl-val" id="v-b">4</span></div>
+      <input type="range" id="r-b" min="1" max="9" value="4" step="1" oninput="calc(); saveConfig();">
+    </div>
+
+    <div class="ctrl-label"><span style="margin-bottom: 4px; display: inline-block;">En cas de joueurs restants :</span></div>
+    <div class="mode-selector">
+      <div class="mode-option active" id="mode-minus" onclick="changeMode('minus')">Créer de plus petites équipes (-1)</div>
+      <div class="mode-option" id="mode-plus" onclick="changeMode('plus')">Surcharger une équipe complète (+1)</div>
+    </div>
+
+    <div id="alert-zone"></div>
+
+    <div class="metrics-grid">
+      <div class="metric-card"><div class="metric-label">Équipes</div><div class="metric-val ok" id="m-eq">8</div></div>
+      <div class="metric-card"><div class="metric-label">Équipes / box</div><div class="metric-val ok" id="m-epb">2</div></div>
+      <div class="metric-card"><div class="metric-label">Boxes utilisées</div><div class="metric-val info" id="m-bu">4</div></div>
+      <div class="metric-card"><div class="metric-label" id="m-label-rest">Équipes modifiées</div><div class="metric-val warn" id="m-rest">0</div></div>
+    </div>
+
+    <div class="box-chips" id="box-chips"></div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-go2" onclick="goStep2()">Saisir les noms →</button>
+      <button class="btn-danger-outline" onclick="clearSavedData()" style="margin-left: auto;">🗑 Effacer la mémoire</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 2 -->
+  <section id="step2" style="display:none;">
+    <h2 class="section-title">Noms des équipes et joueurs</h2>
+    <div id="teams-form"></div>
+    <div class="btn-row" style="flex-wrap:wrap;gap:10px;">
+      <button class="btn-secondary" onclick="goStep1()">← Modifier</button>
+      <button class="btn-outline" onclick="formBuilt=false;buildForm()" title="Relance un tirage aléatoire des équipes">🔀 Remélanger</button>
+      <div style="flex:1;"></div>
+      <button class="btn-outline" onclick="addTeamToBox()" title="Ajouter une équipe dans la dernière box">+ Équipe</button>
+      <button class="btn-outline" onclick="addBox()" title="Ajouter une nouvelle box">+ Box</button>
+      <button class="btn-primary" onclick="genTableaux()">Générer les tableaux →</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 3 -->
+  <section id="step3" style="display:none;">
+
+    <!-- Fiche récap (invisible à l'écran, 1ère page à l'impression) -->
+    <div id="fiche-recap-container"></div>
+
+    <h2 class="section-title">Tableau général</h2>
+    <div class="gen-table-wrap">
+      <table class="data" id="gen-table"></table>
+    </div>
+
+    <h2 class="section-title">Paramètres des fiches</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem;" class="no-print">
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Nom du tournoi</div>
+        <input id="tournoi-name" class="team-name-input" style="width:100%;font-size:15px;" placeholder="Ex: U – Champion's League" value="Le Pan Bar — Tournoi">
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Sous-titre (optionnel)</div>
+        <input id="tournoi-sub" class="team-name-input" style="width:100%;font-size:15px;" placeholder="Ex: Saison 2025">
+      </div>
+    </div>
+
+    <div class="no-print" style="margin-bottom:1.5rem;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Consignes (une par ligne)</div>
+      <textarea id="consignes-input" rows="5" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:10px 12px;outline:none;resize:vertical;line-height:1.6;" placeholder="Inscrivez-vous en binôme sur la borne&#10;Échauffement : lancez un premier jeu avec Cow-Boy&#10;Tournoi : enchaînez Saloon, puis Horse Race, puis Everest">Inscrivez-vous en binôme sur la borne, et non individuellement.
+Échauffement : lancez un premier jeu avec Cow-Boy.
+Tournoi : enchaînez ensuite Saloon, puis Horse Race, puis Everest.
+Les 2 meilleurs binômes de chaque boxe sont qualifiés pour les demi-finales.</textarea>
+    </div>
+
+    <h2 class="section-title">Aperçu des fiches par box</h2>
+    <div class="tab-bar no-print" id="tab-bar"></div>
+    <div id="panels"></div>
+
+    <div class="btn-row no-print">
+      <button class="btn-secondary" onclick="goStep2()">← Modifier les noms</button>
+      <button class="btn-primary" onclick="printFiches()">🖨 Imprimer les fiches</button>
+      <button class="btn-outline" onclick="goStep1()">Nouveau tournoi</button>
+    </div>
+  </section>
+
+</main>
+
+<script>
+const BOX_COLORS = ['#e8c84a','#4abf80','#4a9ee0','#e05a4a','#b46ae0','#e08c4a','#4ae0d0','#e04a9e','#a0e04a'];
+
+let cfg = {};
+let currentMode = 'minus';
+let importedPlayers = []; // liste brute des joueurs importés
+let allColumns = [];      // colonnes détectées dans l'Excel
+let rawData = [];         // données brutes Excel
+
+// ==================== IMPORT EXCEL ====================
+
+// ── Tabs ─────────────────────────────────────────────────
+function switchImportTab(tab) {
+  ['file','paste','manual'].forEach(t => {
+    document.getElementById(`import-panel-${t}`).classList.toggle('active', t === tab);
+    document.querySelectorAll('.import-tab')[['file','paste','manual'].indexOf(t)]
+      .classList.toggle('active', t === tab);
+  });
+}
+
+// ── Coller une liste ──────────────────────────────────────
+function applyPaste() {
+  const raw = document.getElementById('paste-input').value;
+  const names = raw.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+  importedPlayers = names;
+  const count = document.getElementById('paste-count');
+  if (names.length > 0) {
+    count.innerHTML = `<span style="color:var(--green);">✅ ${names.length} joueur${names.length>1?'s':''} détecté${names.length>1?'s':''}</span>`;
+    updateImportCount(names.length);
+    showImportResult(`${names.length} joueurs chargés depuis la liste collée.`);
+  } else {
+    count.textContent = '';
+    document.getElementById('import-result').style.display = 'none';
+  }
+}
+
+// ── Saisie manuelle ───────────────────────────────────────
+function addManualPlayer() {
+  const input = document.getElementById('manual-input');
+  const name = input.value.trim();
+  if (!name) return;
+  importedPlayers.push(name);
+  input.value = '';
+  input.focus();
+  renderManualList();
+  updateImportCount(importedPlayers.length);
+  showImportResult(`${importedPlayers.length} joueur${importedPlayers.length>1?'s':''} dans la liste.`);
+}
+
+function removeManualPlayer(idx) {
+  importedPlayers.splice(idx, 1);
+  renderManualList();
+  updateImportCount(importedPlayers.length);
+  if (importedPlayers.length === 0) {
+    document.getElementById('import-result').style.display = 'none';
+    document.getElementById('manual-count').textContent = '';
+  } else {
+    showImportResult(`${importedPlayers.length} joueur${importedPlayers.length>1?'s':''} dans la liste.`);
+  }
+}
+
+function renderManualList() {
+  const list = document.getElementById('manual-player-list');
+  const count = document.getElementById('manual-count');
+  if (importedPlayers.length === 0) {
+    list.style.display = 'none';
+    count.textContent = '';
+    return;
+  }
+  list.style.display = '';
+  list.innerHTML = importedPlayers.map((name, i) =>
+    `<div class="player-list-item">
+      <span>${name}</span>
+      <button class="btn-del-player" onclick="removeManualPlayer(${i})" title="Supprimer">✕</button>
+    </div>`
+  ).join('');
+  count.innerHTML = `<span style="color:var(--green);">✅ ${importedPlayers.length} joueur${importedPlayers.length>1?'s':''}</span>`;
+}
+
+function updateImportCount(n) {
+  const slider = document.getElementById('r-j');
+  slider.value = Math.min(n, 150);
+  calc();
+}
+
+function showImportResult(msg) {
+  const res = document.getElementById('import-result');
+  res.innerHTML = `<div class="import-success">✅ <span>${msg} Le curseur a été mis à jour.</span></div>`;
+  res.style.display = '';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('import-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+    if (rawData.length < 2) {
+      showImportError("Fichier vide ou non reconnu.");
+      return;
+    }
+
+    // Détecte les colonnes depuis la 1ère ligne (en-têtes)
+    const headers = rawData[0];
+    allColumns = headers.map((h, i) => ({ idx: i, label: h || `Colonne ${i+1}` }));
+
+    // Pré-remplir le picker
+    const picker = document.getElementById('col-picker');
+    picker.innerHTML = allColumns.map(c =>
+      `<option value="${c.idx}">${c.label}</option>`
+    ).join('');
+
+    // Choisir auto la colonne la plus probable (contient "nom", "name", "joueur", "participant")
+    const keywords = ['nom', 'name', 'joueur', 'player', 'participant', 'prénom', 'prenom'];
+    const autoCol = allColumns.find(c =>
+      keywords.some(kw => String(c.label).toLowerCase().includes(kw))
+    );
+    if (autoCol) picker.value = autoCol.idx;
+
+    document.getElementById('col-picker-zone').style.display = '';
+    applyColumn();
+    showImportSuccess(file.name);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function applyColumn() {
+  const colIdx = +document.getElementById('col-picker').value;
+  // Extraire les valeurs à partir de la ligne 2 (skip header)
+  importedPlayers = rawData.slice(1)
+    .map(row => String(row[colIdx] || '').trim())
+    .filter(v => v.length > 0);
+
+  // Mettre à jour le slider joueurs
+  const slider = document.getElementById('r-j');
+  slider.value = Math.min(importedPlayers.length, 150);
+  calc();
+
+  // Mettre à jour le message de succès
+  const res = document.getElementById('import-result');
+  res.innerHTML = `<div class="import-success">✅ <span><strong>${importedPlayers.length} joueurs</strong> détectés — le curseur a été mis à jour. Tu peux ajuster si besoin.</span></div>`;
+  res.style.display = '';
+}
+
+function showImportSuccess(filename) {
+  const zone = document.getElementById('import-zone');
+  zone.style.borderColor = 'var(--green)';
+  zone.querySelector('.import-icon').textContent = '✅';
+  zone.querySelector('.import-title').textContent = filename;
+  zone.querySelector('.import-sub').textContent = 'Fichier chargé — choisir la colonne ci-dessous';
+}
+
+function showImportError(msg) {
+  const res = document.getElementById('import-result');
+  res.innerHTML = `<div class="alert" style="background:rgba(224,90,74,0.1);border:1px solid rgba(224,90,74,0.3);color:#f0a090;">⚠ ${msg}</div>`;
+  res.style.display = '';
+}
+
+// ==================== CONFIG / CALCUL ====================
+
+function saveConfig() {
+  localStorage.setItem('panbar_j', document.getElementById('r-j').value);
+  localStorage.setItem('panbar_e', document.getElementById('r-e').value);
+  localStorage.setItem('panbar_b', document.getElementById('r-b').value);
+  localStorage.setItem('panbar_mode', currentMode);
+}
+
+function saveNames() {
+  const inputs = document.querySelectorAll('#teams-form input');
+  inputs.forEach(input => {
+    localStorage.setItem('panbar_input_' + input.id, input.value);
+  });
+}
+
+function loadSavedData() {
+  if (localStorage.getItem('panbar_j')) {
+    document.getElementById('r-j').value = localStorage.getItem('panbar_j');
+    document.getElementById('r-e').value = localStorage.getItem('panbar_e');
+    document.getElementById('r-b').value = localStorage.getItem('panbar_b');
+    currentMode = localStorage.getItem('panbar_mode') || 'minus';
+    document.getElementById('mode-minus').classList.toggle('active', currentMode === 'minus');
+    document.getElementById('mode-plus').classList.toggle('active', currentMode === 'plus');
+  }
+}
+
+function clearSavedData() {
+  if (confirm("Voulez-vous vraiment effacer tous les noms et réglages stockés dans ce navigateur ?")) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+function changeMode(mode) {
+  currentMode = mode;
+  document.getElementById('mode-minus').classList.toggle('active', mode === 'minus');
+  document.getElementById('mode-plus').classList.toggle('active', mode === 'plus');
+  calc();
+  saveConfig();
+}
+
+function calcTeamSizes(j, e, mode) {
+  if (e <= 0 || j <= 0) return [];
+  if (j <= e) return [j];
+  const nBase = Math.floor(j / e);
+  const rest = j % e;
+  if (rest === 0) return Array(nBase).fill(e);
+  if (mode === 'minus') {
+    const totalTeams = nBase + 1;
+    const sizeFloor = Math.floor(j / totalTeams);
+    const teamsWithCeil = j % totalTeams;
+    const sizes = [];
+    for (let i = 0; i < totalTeams; i++) sizes.push(i < teamsWithCeil ? sizeFloor + 1 : sizeFloor);
+    return sizes.sort((a, b) => b - a);
+  } else {
+    const sizes = Array(nBase).fill(e);
+    for (let i = 0; i < rest; i++) sizes[i % nBase] += 1;
+    return sizes.sort((a, b) => b - a);
+  }
+}
+
+function calc() {
+  const j = +document.getElementById('r-j').value;
+  const e = +document.getElementById('r-e').value;
+  const b = +document.getElementById('r-b').value;
+  document.getElementById('v-j').textContent = j;
+  document.getElementById('v-e').textContent = e;
+  document.getElementById('v-b').textContent = b;
+  const teamSizes = calcTeamSizes(j, e, currentMode);
+  const nEq = teamSizes.length;
+  const modifiedTeams = teamSizes.filter(size => size !== e);
+  const hasUneven = modifiedTeams.length > 0;
+  const boxUsed = Math.min(b, nEq);
+  const dist = distribuerEquipes(nEq, boxUsed);
+  document.getElementById('m-eq').textContent = nEq;
+  const epbArr = [...new Set(dist)];
+  document.getElementById('m-epb').textContent = epbArr.length === 1 ? epbArr[0] : epbArr[0] + '–' + epbArr[epbArr.length-1];
+  document.getElementById('m-bu').textContent = boxUsed;
+  const restEl = document.getElementById('m-rest');
+  const labelEl = document.getElementById('m-label-rest');
+  if (hasUneven) {
+    restEl.textContent = modifiedTeams.length;
+    restEl.className = 'metric-val warn';
+    labelEl.textContent = currentMode === 'minus' ? "Équipes réduites" : "Équipes surchargées";
+  } else {
+    restEl.textContent = '✓';
+    restEl.className = 'metric-val ok';
+    labelEl.textContent = "Équipes modifiées";
+  }
+  const az = document.getElementById('alert-zone');
+  az.innerHTML = '';
+  if (hasUneven) {
+    const counts = {};
+    teamSizes.forEach(s => counts[s] = (counts[s] || 0) + 1);
+    const detailMsg = Object.entries(counts).map(([size, count]) => `${count} équipe${count>1?'s':''} de ${size} j.`).join(' + ');
+    az.innerHTML += `<div class="alert alert-info">ℹ Mode ${currentMode === 'minus' ? '[-1]' : '[+1]'} : ${detailMsg} — tous les joueurs sont inclus.</div>`;
+  }
+  if (nEq < b) az.innerHTML += `<div class="alert alert-info">ℹ ${b - nEq} box(es) inutilisée(s).</div>`;
+  const chips = document.getElementById('box-chips');
+  chips.innerHTML = dist.map((n, i) =>
+    `<div class="box-chip"><span class="box-dot" style="background:${BOX_COLORS[i]}"></span><span style="color:var(--muted);">Box ${i+1}</span><span style="font-weight:600;">${n} équipe${n>1?'s':''}</span></div>`
+  ).join('');
+  document.getElementById('btn-go2').disabled = nEq < 1;
+  formBuilt = false; // config changed, force rebuild on next goStep2
+  cfg = { j, e, b, nEq, hasUneven, boxUsed, dist, teamSizes };
+  updateHeader();
+}
+
+function distribuerEquipes(nEq, nBox) {
+  if (!nBox) return [];
+  const base = Math.floor(nEq / nBox);
+  const extra = nEq % nBox;
+  return Array.from({length: nBox}, (_, i) => base + (i < extra ? 1 : 0));
+}
+
+function updateHeader() {
+  const el = document.getElementById('header-info');
+  if (cfg.nEq > 0) el.textContent = `${cfg.nEq} équipes · ${cfg.boxUsed} boxes · ${cfg.j} joueurs`;
+  else el.textContent = '';
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById(`step${i}`).style.display = i === n ? '' : 'none';
+    const nav = document.getElementById(`snav-${i}`);
+    nav.className = 'step-item' + (i === n ? ' active' : (i < n ? ' done' : ''));
+  });
+}
+
+function goStep1() {
+  // Si on vient de l'étape 2, sauvegarder avant de partir
+  if (document.getElementById('step2').style.display !== 'none') {
+    readStateFromDOM();
+  }
+  setStep(1);
+}
+function goStep2() {
+  // Si on revient de l'étape 3, sauvegarder l'état DOM avant de changer de step
+  if (document.getElementById('step3').style.display !== 'none') {
+    readStateFromDOM();
+  }
+  setStep(2);
+  if (!formBuilt) {
+    buildForm();       // 1er passage : initialise depuis importedPlayers / localStorage
+  } else {
+    restoreForm();     // retour : restaure depuis teamPlayers + teamBox
+  }
+}
+
+// ==================== STEP 2 — FORM AVEC ADD/REMOVE ====================
+
+// teamPlayers[teamIdx] = ['Joueur A', 'Joueur B', ...]  — état live du formulaire
+let teamPlayers = {};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildForm() {
+  const { dist, teamSizes, e } = cfg;
+
+  // Collecter tous les joueurs existants (import OU saisie manuelle)
+  // Priorité : importedPlayers si dispo, sinon on récupère depuis teamPlayers actuel
+  let allPlayers = [];
+  if (importedPlayers.length > 0) {
+    allPlayers = [...importedPlayers];
+  } else if (Object.keys(teamPlayers).length > 0) {
+    // Récupérer tous les noms déjà saisis (depuis teamPlayers)
+    Object.values(teamPlayers).forEach(players => {
+      players.forEach(p => { if (p.trim()) allPlayers.push(p.trim()); });
+    });
+  }
+
+  // Mélange aléatoire du pool
+  const pool = shuffle(allPlayers);
+
+  teamPlayers = {};
+  boxNames = {};
+  teamBox = {};
+
+  let playerCursor = 0;
+  let ti = 0;
+  dist.forEach((n, bi) => {
+    for (let t = 0; t < n; t++) {
+      const tSize = teamSizes[ti] !== undefined ? teamSizes[ti] : e;
+      const players = [];
+      for (let p = 0; p < tSize; p++) {
+        players.push(pool[playerCursor] || '');
+        playerCursor++;
+      }
+      teamPlayers[ti] = players;
+      teamBox[ti] = bi;
+      ti++;
+    }
+  });
+
+  formBuilt = true;
+  renderForm();
+}
+
+// Restaure le formulaire depuis teamPlayers + teamBox sans réinitialiser
+function restoreForm() {
+  const { dist, e } = cfg;
+  const nBoxes = dist.length;
+
+  // Reconstruire chaque box dans l'ordre DOM actuel de teamBox
+  let html = '';
+  for (let bi = 0; bi < nBoxes; bi++) {
+    const teamsInBox = Object.keys(teamBox).map(Number)
+      .filter(ti => teamBox[ti] === bi);
+    const bName = boxNames[bi] !== undefined ? boxNames[bi] : `Box ${bi+1}`;
+    html += `<div class="box-group" id="boxgroup-${bi}">
+      <div class="box-group-header" style="display:flex;align-items:center;gap:8px;">
+        <span class="box-dot" style="background:${BOX_COLORS[bi]};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+        <input class="box-name-input" id="boxname-${bi}" value="${bName.replace(/"/g,'&quot;')}"
+          placeholder="Box ${bi+1}" oninput="boxNames[${bi}]=this.value">
+        <span id="boxcount-${bi}" style="color:var(--muted);font-weight:400;font-size:13px;"> — ${teamsInBox.length} équipe${teamsInBox.length!==1?'s':''}</span>
+        <button class="btn-del-box" onclick="deleteBox(${bi})" title="Supprimer cette box">🗑 Supprimer</button>
+      </div>
+      <div class="teams-grid" id="teamsgrid-${bi}">
+        ${teamsInBox.map(idx => teamCardHTML(bi, idx, e)).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('teams-form').innerHTML = html;
+}
+
+// ── State global ─────────────────────────────────────────
+let dragPlayer  = null;   // { teamIdx, playerIdx }
+let dragTeam    = null;   // teamIdx en cours de déplacement
+let formBuilt   = false;  // true une fois le formulaire construit — évite de réinitialiser au retour
+
+// Construit le HTML d'une ligne joueur avec poignée drag
+function playerRowHTML(teamIdx, playerIdx, val) {
+  const safe = (val || '').replace(/"/g, '&quot;');
+  return `<div class="player-row" id="prow-${teamIdx}-${playerIdx}"
+    draggable="true"
+    ondragstart="onPlayerDragStart(event,${teamIdx},${playerIdx})"
+    ondragend="onPlayerDragEnd(event)"
+    ondragover="onPlayerDragOver(event)"
+    ondragleave="onPlayerDragLeave(event)"
+    ondrop="onPlayerDrop(event,${teamIdx},${playerIdx})">
+    <span class="drag-handle" title="Glisser pour déplacer">⠿</span>
+    <input class="player-input" id="tp-${teamIdx}-${playerIdx}"
+      placeholder="Joueur ${playerIdx+1}" value="${safe}"
+      oninput="updatePlayer(${teamIdx},${playerIdx},this.value)">
+    <button class="btn-del-player" onclick="removePlayer(${teamIdx},${playerIdx})" title="Supprimer">✕</button>
+  </div>`;
+}
+
+// Construit le HTML d'une team-card complète (avec drag d'équipe)
+function teamCardHTML(bi, idx, e) {
+  const tSize = cfg.teamSizes[idx] !== undefined ? cfg.teamSizes[idx] : e;
+  const isModified = tSize !== e;
+  const modColor = tSize < e ? 'var(--info)' : 'var(--danger)';
+  const savedTeamName = localStorage.getItem('panbar_input_tn-' + idx) || `Équipe ${idx+1}`;
+  const players = teamPlayers[idx] || [];
+  const playerRows = players.map((pval, p) => playerRowHTML(idx, p, pval)).join('');
+  const emptyZone = players.length === 0
+    ? `<div class="drop-zone-empty" id="dropempty-${idx}"
+        ondragover="onEmptyZoneDragOver(event)"
+        ondragleave="onEmptyZoneDragLeave(event)"
+        ondrop="onPlayerDropEmpty(event,${idx})">Déposer un joueur ici</div>`
+    : '';
+
+  return `<div class="team-card" id="teamcard-${idx}"
+    style="border-top:2px solid ${isModified ? modColor : BOX_COLORS[bi]};"
+    draggable="true"
+    ondragstart="onTeamDragStart(event,${idx})"
+    ondragend="onTeamDragEnd(event)"
+    ondragover="onTeamDragOver(event,${idx})"
+    ondragleave="onTeamDragLeave(event,${idx})"
+    ondrop="onTeamDrop(event,${idx})">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+      <input class="team-name-input" id="tn-${idx}" placeholder="Nom de l'équipe"
+        value="${savedTeamName.replace(/"/g,'&quot;')}"
+        oninput="saveNames()" style="flex:1;">
+      <button class="btn-del-player" onclick="deleteTeam(${idx},${bi})" title="Supprimer l'équipe" style="font-size:13px;padding:2px 6px;">🗑</button>
+      <span class="team-drag-handle" title="Glisser pour déplacer l'équipe">⠿</span>
+    </div>
+    ${isModified ? `<div style="font-size:11px;color:${modColor};margin-bottom:6px;">⚠ Équipe de ${tSize} joueurs</div>` : ''}
+    ${emptyZone}
+    <div id="players-${idx}">${playerRows}</div>
+    <button class="btn-add-player" onclick="addPlayer(${idx})">+ Ajouter un joueur</button>
+  </div>`;
+}
+
+function renderForm() {
+  const { dist, e } = cfg;
+
+  // Reconstruire cfg.teamBox (quelle box contient quelle équipe)
+  rebuildTeamBox();
+
+  let html = '';
+  dist.forEach((n, bi) => {
+    const teamsInBox = getTeamsInBox(bi);
+    const bName = boxNames[bi] !== undefined ? boxNames[bi] : `Box ${bi+1}`;
+    html += `<div class="box-group" id="boxgroup-${bi}">
+      <div class="box-group-header" style="display:flex;align-items:center;gap:8px;">
+        <span class="box-dot" style="background:${BOX_COLORS[bi]};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+        <input class="box-name-input" id="boxname-${bi}" value="${bName.replace(/"/g,'&quot;')}"
+          placeholder="Box ${bi+1}" oninput="boxNames[${bi}]=this.value">
+        <span id="boxcount-${bi}" style="color:var(--muted);font-weight:400;font-size:13px;"> — ${teamsInBox.length} équipe${teamsInBox.length!==1?'s':''}</span>
+        <button class="btn-del-box" onclick="deleteBox(${bi})" title="Supprimer cette box">🗑 Supprimer</button>
+      </div>
+      <div class="teams-grid" id="teamsgrid-${bi}">
+        ${teamsInBox.map(idx => teamCardHTML(bi, idx, e)).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('teams-form').innerHTML = html;
+}
+
+// teamBox[teamIdx] = boxIdx
+let teamBox  = {};
+let boxNames = {};  // boxNames[bi] = nom personnalisé de la box
+
+function rebuildTeamBox() {
+  teamBox = {};
+  const { dist } = cfg;
+  let ti = 0;
+  dist.forEach((n, bi) => {
+    for (let t = 0; t < n; t++) { teamBox[ti] = bi; ti++; }
+  });
+}
+
+function getTeamsInBox(bi) {
+  return Object.keys(teamBox).map(Number).filter(ti => teamBox[ti] === bi);
+}
+
+function updateBoxHeader(bi) {
+  const teams = getTeamsInBox(bi);
+  const el = document.getElementById(`boxcount-${bi}`);
+  if (el) el.textContent = ` — ${teams.length} équipe${teams.length!==1?'s':''}`;
+}
+
+function updatePlayer(teamIdx, playerIdx, val) {
+  if (teamPlayers[teamIdx]) teamPlayers[teamIdx][playerIdx] = val;
+  saveNames();
+}
+
+function removePlayer(teamIdx, playerIdx) {
+  if (!teamPlayers[teamIdx]) return;
+  teamPlayers[teamIdx].splice(playerIdx, 1);
+  refreshTeamCard(teamIdx);
+  saveNames();
+}
+
+function addPlayer(teamIdx) {
+  if (!teamPlayers[teamIdx]) teamPlayers[teamIdx] = [];
+  teamPlayers[teamIdx].push('');
+  refreshTeamCard(teamIdx);
+  // Focus sur le nouveau champ
+  setTimeout(() => {
+    const inputs = document.querySelectorAll(`#players-${teamIdx} .player-input`);
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 50);
+}
+
+function refreshTeamCard(teamIdx) {
+  const players = teamPlayers[teamIdx] || [];
+  const container = document.getElementById(`players-${teamIdx}`);
+  if (!container) return;
+  container.innerHTML = players.map((pval, p) => playerRowHTML(teamIdx, p, pval)).join('');
+
+  // Gérer zone vide
+  const card = document.getElementById(`teamcard-${teamIdx}`);
+  const emptyEl = document.getElementById(`dropempty-${teamIdx}`);
+  if (players.length === 0 && !emptyEl && card) {
+    const ez = document.createElement('div');
+    ez.className = 'drop-zone-empty';
+    ez.id = `dropempty-${teamIdx}`;
+    ez.textContent = 'Déposer un joueur ici';
+    ez.ondragover = e => onEmptyZoneDragOver(e);
+    ez.ondragleave = e => onEmptyZoneDragLeave(e);
+    ez.ondrop = e => onPlayerDropEmpty(e, teamIdx);
+    card.insertBefore(ez, container);
+  } else if (players.length > 0 && emptyEl) {
+    emptyEl.remove();
+  }
+}
+
+// ==================== STEP 3 — TABLEAUX ====================
+
+// ══════════════════════════════════════════════════════════
+// DRAG & DROP — JOUEURS
+// ══════════════════════════════════════════════════════════
+
+function onPlayerDragStart(e, teamIdx, playerIdx) {
+  // Empêcher le drag de la team-card parente de se déclencher
+  e.stopPropagation();
+  dragPlayer = { teamIdx, playerIdx };
+  dragTeam = null;
+  setTimeout(() => {
+    const el = document.getElementById(`prow-${teamIdx}-${playerIdx}`);
+    if (el) el.classList.add('dragging');
+  }, 0);
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', 'player');
+}
+
+function onPlayerDragEnd(e) {
+  document.querySelectorAll('.player-row').forEach(el => {
+    el.classList.remove('dragging','drag-over-top','drag-over-bottom');
+  });
+  dragPlayer = null;
+}
+
+function onPlayerDragOver(e) {
+  if (!dragPlayer) return;
+  e.preventDefault(); e.stopPropagation();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+  row.classList.remove('drag-over-top','drag-over-bottom');
+  row.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bottom');
+}
+
+function onPlayerDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over-top','drag-over-bottom');
+}
+
+function onPlayerDrop(e, toTeamIdx, toPlayerIdx) {
+  e.preventDefault(); e.stopPropagation();
+  if (!dragPlayer) return;
+  const { teamIdx: fromTeam, playerIdx: fromIdx } = dragPlayer;
+  const row = e.currentTarget;
+  const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+  const insertBefore = e.clientY < mid;
+  row.classList.remove('drag-over-top','drag-over-bottom');
+
+  // Extraire le joueur source
+  const playerVal = teamPlayers[fromTeam][fromIdx];
+
+  if (fromTeam === toTeamIdx) {
+    // Réordonner dans la même équipe
+    teamPlayers[fromTeam].splice(fromIdx, 1);
+    let dest = toPlayerIdx;
+    if (fromIdx < toPlayerIdx) dest--;
+    if (!insertBefore) dest++;
+    dest = Math.max(0, Math.min(dest, teamPlayers[fromTeam].length));
+    teamPlayers[fromTeam].splice(dest, 0, playerVal);
+    refreshTeamCard(fromTeam);
+  } else {
+    // Déplacer vers une autre équipe
+    teamPlayers[fromTeam].splice(fromIdx, 1);
+    let dest = toPlayerIdx;
+    if (!insertBefore) dest++;
+    dest = Math.max(0, Math.min(dest, teamPlayers[toTeamIdx].length));
+    teamPlayers[toTeamIdx].splice(dest, 0, playerVal);
+    refreshTeamCard(fromTeam);
+    refreshTeamCard(toTeamIdx);
+  }
+  dragPlayer = null;
+}
+
+function onEmptyZoneDragOver(e) {
+  if (!dragPlayer) return;
+  e.preventDefault(); e.stopPropagation();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onEmptyZoneDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onPlayerDropEmpty(e, toTeamIdx) {
+  e.preventDefault(); e.stopPropagation();
+  e.currentTarget.classList.remove('drag-over');
+  if (!dragPlayer) return;
+  const { teamIdx: fromTeam, playerIdx: fromIdx } = dragPlayer;
+  const playerVal = teamPlayers[fromTeam][fromIdx];
+  teamPlayers[fromTeam].splice(fromIdx, 1);
+  if (!teamPlayers[toTeamIdx]) teamPlayers[toTeamIdx] = [];
+  teamPlayers[toTeamIdx].push(playerVal);
+  refreshTeamCard(fromTeam);
+  refreshTeamCard(toTeamIdx);
+  dragPlayer = null;
+}
+
+// ══════════════════════════════════════════════════════════
+// DRAG & DROP — ÉQUIPES ENTRE BOXES
+// ══════════════════════════════════════════════════════════
+
+function onTeamDragStart(e, teamIdx) {
+  if (dragPlayer) return; // si on drag un joueur, ignorer
+  dragTeam = teamIdx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', 'team');
+  setTimeout(() => {
+    const el = document.getElementById(`teamcard-${teamIdx}`);
+    if (el) el.classList.add('team-dragging');
+  }, 0);
+}
+
+function onTeamDragEnd(e) {
+  document.querySelectorAll('.team-card').forEach(el => {
+    el.classList.remove('team-dragging','team-drag-over');
+  });
+  dragTeam = null;
+}
+
+function onTeamDragOver(e, toTeamIdx) {
+  if (dragTeam === null || dragTeam === toTeamIdx || dragPlayer) return;
+  e.preventDefault(); e.stopPropagation();
+  e.dataTransfer.dropEffect = 'move';
+  document.getElementById(`teamcard-${toTeamIdx}`)?.classList.add('team-drag-over');
+}
+
+function onTeamDragLeave(e, toTeamIdx) {
+  document.getElementById(`teamcard-${toTeamIdx}`)?.classList.remove('team-drag-over');
+}
+
+function onTeamDrop(e, toTeamIdx) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById(`teamcard-${toTeamIdx}`)?.classList.remove('team-drag-over');
+  if (dragTeam === null || dragTeam === toTeamIdx || dragPlayer) return;
+
+  const fromTeam = dragTeam;
+  const fromBox  = teamBox[fromTeam];
+  const toBox    = teamBox[toTeamIdx];
+
+  if (fromBox === toBox) {
+    // Réordonner dans la même box : échanger les positions dans la grille
+    const grid = document.getElementById(`teamsgrid-${toBox}`);
+    if (!grid) return;
+    const fromCard = document.getElementById(`teamcard-${fromTeam}`);
+    const toCard   = document.getElementById(`teamcard-${toTeamIdx}`);
+    if (!fromCard || !toCard) return;
+    // Insérer fromCard avant toCard
+    grid.insertBefore(fromCard, toCard);
+  } else {
+    // Déplacer l'équipe dans une autre box
+    teamBox[fromTeam] = toBox;
+    const fromGrid = document.getElementById(`teamsgrid-${fromBox}`);
+    const toGrid   = document.getElementById(`teamsgrid-${toBox}`);
+    const fromCard = document.getElementById(`teamcard-${fromTeam}`);
+    const toCard   = document.getElementById(`teamcard-${toTeamIdx}`);
+    if (fromCard && toGrid && toCard) {
+      // Mettre à jour la couleur de bordure de la carte
+      fromCard.style.borderTopColor = BOX_COLORS[toBox];
+      toGrid.insertBefore(fromCard, toCard);
+    }
+    updateBoxHeader(fromBox);
+    updateBoxHeader(toBox);
+  }
+  dragTeam = null;
+}
+
+// Lit l'état réel du DOM (après drag & drop) et synchronise teamPlayers
+// Génère un teamIdx unique (max existant + 1)
+function nextTeamIdx() {
+  const existing = Object.keys(teamPlayers).map(Number);
+  return existing.length > 0 ? Math.max(...existing) + 1 : 0;
+}
+
+// Génère un boxIdx unique (max existant + 1)
+function nextBoxIdx() {
+  const grids = document.querySelectorAll('[id^="teamsgrid-"]');
+  if (!grids.length) return 0;
+  const ids = Array.from(grids).map(g => parseInt(g.id.replace('teamsgrid-', '')));
+  return Math.max(...ids) + 1;
+}
+
+function addBox() {
+  readStateFromDOM();
+  const bi = nextBoxIdx();
+  const boxNum = bi + 1;
+  const color = BOX_COLORS[bi % BOX_COLORS.length];
+
+  const html = `<div class="box-group" id="boxgroup-${bi}">
+    <div class="box-group-header" style="display:flex;align-items:center;gap:8px;">
+      <span class="box-dot" style="background:${color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+      <input class="box-name-input" id="boxname-${bi}" value="Box ${boxNum}"
+        placeholder="Box ${boxNum}" oninput="boxNames[${bi}]=this.value">
+      <span id="boxcount-${bi}" style="color:var(--muted);font-weight:400;font-size:13px;"> — 0 équipe</span>
+      <button class="btn-del-box" onclick="deleteBox(${bi})" title="Supprimer cette box">🗑 Supprimer</button>
+    </div>
+    <div class="teams-grid" id="teamsgrid-${bi}"></div>
+  </div>`;
+
+  document.getElementById('teams-form').insertAdjacentHTML('beforeend', html);
+  boxNames[bi] = `Box ${boxNum}`;
+
+  // Ajouter automatiquement une équipe vide dans la nouvelle box
+  addTeamToBox(bi);
+}
+
+function addTeamToBox(forceBi) {
+  readStateFromDOM();
+  // Trouver la box cible : forceBi si précisé, sinon la dernière box visible
+  let bi = forceBi;
+  if (bi === undefined) {
+    const grids = document.querySelectorAll('[id^="teamsgrid-"]');
+    if (!grids.length) { alert('Ajoutez d\'abord une box avec le bouton + Box.'); return; }
+    bi = parseInt(grids[grids.length - 1].id.replace('teamsgrid-', ''));
+  }
+
+  const grid = document.getElementById(`teamsgrid-${bi}`);
+  if (!grid) return;
+
+  const ti = nextTeamIdx();
+  teamPlayers[ti] = [];
+  teamBox[ti] = bi;
+  // Nom par défaut
+  const existingTeams = Object.keys(teamBox).map(Number).filter(t => teamBox[t] === bi).length;
+
+  const cardHTML = teamCardHTML(bi, ti, cfg.e || 2);
+  grid.insertAdjacentHTML('beforeend', cardHTML);
+  // Override default name
+  const nameInput = document.getElementById(`tn-${ti}`);
+  if (nameInput) nameInput.value = `Équipe ${ti + 1}`;
+
+  updateBoxHeader(bi);
+}
+
+function deleteTeam(teamIdx, bi) {
+  const card = document.getElementById(`teamcard-${teamIdx}`);
+  if (card) card.remove();
+  delete teamPlayers[teamIdx];
+  delete teamBox[teamIdx];
+  updateBoxHeader(bi);
+}
+
+function deleteBox(bi) {
+  const teamsInBox = Object.keys(teamBox).map(Number).filter(ti => teamBox[ti] === bi);
+  if (teamsInBox.length > 0) {
+    const confirm_msg = `Cette box contient ${teamsInBox.length} équipe${teamsInBox.length>1?'s':''}. Les équipes seront supprimées. Continuer ?`;
+    if (!confirm(confirm_msg)) return;
+    // Supprimer les équipes de cette box
+    teamsInBox.forEach(ti => {
+      delete teamPlayers[ti];
+      delete teamBox[ti];
+    });
+  }
+  // Retirer le DOM
+  const group = document.getElementById(`boxgroup-${bi}`);
+  if (group) group.remove();
+  // Supprimer le nom
+  delete boxNames[bi];
+}
+
+function saveBoxNames() {
+  // Lire les noms depuis les inputs DOM au moment de générer
+  document.querySelectorAll('[id^="boxname-"]').forEach(inp => {
+    const bi = parseInt(inp.id.replace('boxname-', ''));
+    boxNames[bi] = inp.value;
+  });
+}
+
+function readStateFromDOM() {
+  // Sync les noms de boxes
+  saveBoxNames();
+  // Sync les valeurs des inputs dans teamPlayers
+  document.querySelectorAll('[id^="players-"]').forEach(container => {
+    const teamIdx = parseInt(container.id.replace('players-', ''));
+    const inputs = container.querySelectorAll('.player-input');
+    teamPlayers[teamIdx] = Array.from(inputs).map(inp => inp.value.trim());
+  });
+
+  // Reconstruit teamBox depuis la position DOM des teamcards
+  document.querySelectorAll('[id^="teamsgrid-"]').forEach(grid => {
+    const bi = parseInt(grid.id.replace('teamsgrid-', ''));
+    grid.querySelectorAll('[id^="teamcard-"]').forEach(card => {
+      const ti = parseInt(card.id.replace('teamcard-', ''));
+      teamBox[ti] = bi;
+    });
+  });
+}
+
+function genTableaux() {
+  // 1. Lire l'état réel du DOM (drag & drop, saisies)
+  readStateFromDOM();
+
+  // 2. Construire la liste des équipes depuis le DOM dans l'ordre d'affichage
+  let teams = [];
+  const { dist } = cfg;
+  const nBoxes = dist.length;
+
+  for (let bi = 0; bi < nBoxes; bi++) {
+    const grid = document.getElementById(`teamsgrid-${bi}`);
+    if (!grid) continue;
+    grid.querySelectorAll('[id^="teamcard-"]').forEach(card => {
+      const ti = parseInt(card.id.replace('teamcard-', ''));
+      const nameEl = document.getElementById(`tn-${ti}`);
+      const name = (nameEl?.value || '').trim() || `Équipe ${ti+1}`;
+      const players = (teamPlayers[ti] || []).filter(p => p.length > 0);
+      const tSize = players.length || 1;
+      const boxLabel = boxNames[bi] || `Box ${bi+1}`;
+      teams.push({ name, players, tSize, box: bi+1, boxLabel, color: BOX_COLORS[bi % BOX_COLORS.length], idx: ti });
+    });
+  }
+
+  const maxSize = Math.max(...teams.map(t => t.tSize), 1);
+
+  // Tableau général
+  const playerHeaders = Array.from({length:maxSize},(_,i)=>`<th>Joueur ${i+1}</th>`).join('');
+  let rows = teams.map(t => {
+    const cells = Array.from({length:maxSize},(_,i)=>`<td>${t.players[i] || ''}</td>`).join('');
+    return `<tr>
+      <td><span class="team-pill"><span class="dot" style="background:${t.color}"></span>${t.name}</span></td>
+      <td style="color:${t.color};font-weight:500;">${t.boxLabel}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+  document.getElementById('gen-table').innerHTML =
+    `<thead><tr><th>Équipe</th><th>Box</th>${playerHeaders}</tr></thead><tbody>${rows}</tbody>`;
+
+  // Panels par box — fiches A4
+  const tabBar = document.getElementById('tab-bar');
+  const panels = document.getElementById('panels');
+  tabBar.innerHTML = '';
+  panels.innerHTML = '';
+
+  // Boxes présentes dans l'ordre (peut différer de cfg.dist après drag)
+  const boxNums = [...new Set(teams.map(t => t.box))].sort((a,b) => a-b);
+  boxNums.forEach((boxNum, loopIdx) => {
+    const bi = boxNum - 1;
+    const boxTeams = teams.filter(t => t.box === boxNum);
+
+    // Tab btn
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (loopIdx===0?' active':'');
+    btn.textContent = boxNames[bi] || `Box ${boxNum}`;
+    btn.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.box-panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`bp-${bi}`).classList.add('active');
+    };
+    tabBar.appendChild(btn);
+
+    // Bloc équipes
+    const teamRows = boxTeams.map((t, i) => {
+      const playersStr = t.players.length ? t.players.join(' + ') : '—';
+      return `<div class="fiche-team-row">
+        <div class="fiche-team-num">${i+1}</div>
+        <div class="fiche-team-content">
+          <span class="fiche-team-name">${t.name}</span>
+          <span class="fiche-team-players">${playersStr}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Wrapper panel (contient fiche A4 + preview écran)
+    const div = document.createElement('div');
+    div.className = 'box-panel' + (loopIdx===0?' active':'');
+    div.id = `bp-${bi}`;
+
+    div.innerHTML = `
+      <!-- FICHE A4 réelle (masquée écran, visible print) -->
+      <div class="fiche-a4" id="fiche-${bi}">
+        <div class="fiche-header">
+          <span class="fiche-star">★</span>
+          <span class="fiche-tournoi" id="ft-tournoi-${bi}">LE PAN BAR — TOURNOI</span>
+          <div class="fiche-box-wrap">
+            <div class="fiche-box-wing">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="fiche-box-num">${(boxNames[bi] || 'BOX '+(bi+1)).toUpperCase()}</span>
+            <div class="fiche-box-wing right">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="fiche-divider">
+            <div class="fiche-divider-line"></div>
+            <span class="fiche-divider-diamond">◆</span>
+            <div class="fiche-divider-line"></div>
+          </div>
+        </div>
+
+        <!-- ÉQUIPES -->
+        <div class="fiche-bloc">
+          <div class="fiche-bloc-title" id="ft-eq-title-${bi}">Équipes</div>
+          <div class="fiche-bloc-body">${teamRows}</div>
+        </div>
+
+        <!-- CONSIGNES -->
+        <div class="fiche-bloc" id="fiche-consignes-${bi}" style="display:none;">
+          <div class="fiche-bloc-title">Consignes</div>
+          <div class="fiche-bloc-body" id="fiche-consignes-body-${bi}"></div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="fiche-footer">
+          <span>Le Pan Bar</span>
+          <div class="fiche-footer-dots"><span></span><span></span></div>
+          <span id="ft-sub-${bi}"></span>
+        </div>
+      </div>
+
+      <!-- PREVIEW ÉCRAN : mini fiche visible directement (pas de clone) -->
+      <div class="no-print" style="display:flex;align-items:flex-start;gap:20px;margin-bottom:2rem;">
+        <div style="flex-shrink:0;width:200px;height:283px;overflow:hidden;border-radius:6px;border:1px solid rgba(212,175,55,0.35);background:#1c3b1c;">
+          <div id="preview-${bi}" style="
+            transform:scale(0.315);transform-origin:top left;
+            width:210mm;background:#1c3b1c;
+            font-family:'Barlow Condensed',sans-serif;color:#d4af37;
+            padding:12mm 14mm 8mm;box-sizing:border-box;pointer-events:none;">
+          </div>
+        </div>
+        <div style="flex:1;padding-top:8px;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:#d4af37;margin-bottom:6px;letter-spacing:.05em;">BOX ${bi+1}</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">${boxTeams.length} équipe${boxTeams.length>1?'s':''}</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;">Format A4 · vert/or · prêt à imprimer<br>Modifie le nom du tournoi et les consignes ci-dessus.</div>
+        </div>
+      </div>`;
+
+    panels.appendChild(div);
+  });
+
+  // Sync live
+  syncFiches();
+  document.getElementById('tournoi-name').addEventListener('input', syncFiches);
+  document.getElementById('tournoi-sub').addEventListener('input', syncFiches);
+  document.getElementById('consignes-input').addEventListener('input', syncFiches);
+
+  // ── Fiche récap ────────────────────────────────────────────
+  buildRecap(teams);
+
+  setStep(3);
+  window.scrollTo(0,0);
+}
+
+function buildRecap(teams) {
+  const name = (document.getElementById('tournoi-name')?.value || 'LE PAN BAR — TOURNOI').toUpperCase();
+  const sub  = document.getElementById('tournoi-sub')?.value || '';
+
+  // Grouper par box
+  const byBox = {};
+  teams.forEach(t => {
+    if (!byBox[t.box]) byBox[t.box] = [];
+    byBox[t.box].push(t);
+  });
+
+  const boxCards = Object.entries(byBox).map(([boxNum, bTeams]) => {
+    const teamLines = bTeams.map((t, i) => {
+      const pl = t.players.length ? t.players.join(' + ') : '—';
+      return `<div class="recap-team-line">
+        <span class="recap-team-num">${i+1}</span>
+        <span class="recap-team-name">${t.name}</span>
+        <span class="recap-team-players">— ${pl}</span>
+      </div>`;
+    }).join('');
+    return `<div class="recap-box-card">
+      <div class="recap-box-header">
+        <span>${boxNames[boxNum-1] || ('Box '+boxNum)}</span>
+        <span style="font-size:9pt;font-weight:400;">${bTeams.length} équipe${bTeams.length>1?'s':''}</span>
+      </div>
+      <div class="recap-box-body">${teamLines}</div>
+    </div>`;
+  }).join('');
+
+  const html = `<div class="fiche-recap" id="fiche-recap">
+    <div class="recap-header">
+      <span class="fiche-star">★</span>
+      <span class="recap-title" id="recap-tournoi-name">${name}</span>
+      <span class="recap-sub" id="recap-tournoi-sub">${sub}</span>
+      <div class="fiche-divider" style="margin-top:3mm;">
+        <div class="fiche-divider-line"></div>
+        <span class="fiche-divider-diamond">◆</span>
+        <div class="fiche-divider-line"></div>
+      </div>
+    </div>
+    <div class="recap-grid">${boxCards}</div>
+    <div class="fiche-footer">
+      <span>Le Pan Bar</span>
+      <div class="fiche-footer-dots"><span></span><span></span></div>
+      <span>Récapitulatif général</span>
+    </div>
+  </div>`;
+
+  document.getElementById('fiche-recap-container').innerHTML = html;
+
+  // Sync recap name quand on change le champ
+  document.getElementById('tournoi-name').oninput = syncFiches;
+  document.getElementById('tournoi-sub').oninput = syncFiches;
+}
+
+// ==================== SYNC FICHES + PRINT ====================
+
+function buildConsignesHTML(lines) {
+  if (!lines.length) return '';
+  const rows = lines.map((line, i) => {
+    const fmt = line.replace(/^([^:]+:)/, '<strong style="color:#f0d97a;">$1</strong>');
+    return `<div style="display:flex;align-items:flex-start;gap:3mm;padding:2mm 0;border-bottom:1px solid rgba(212,175,55,0.3);font-family:'Barlow',sans-serif;font-size:10.5pt;color:#f5e6a0;line-height:1.4;">
+      <div style="width:6mm;height:6mm;border-radius:50%;border:1.5px solid #d4af37;display:flex;align-items:center;justify-content:center;font-size:8pt;font-weight:700;flex-shrink:0;color:#d4af37;background:#163016;font-family:'Barlow Condensed',sans-serif;margin-top:1mm;">${i+1}</div>
+      <div style="flex:1;">${fmt}</div></div>`;
+  }).join('');
+  return `<div style="border:1.5px solid #d4af37;border-radius:5px;overflow:hidden;">
+    <div style="background:#d4af37;color:#1c3b1c;text-align:center;font-size:11pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:2mm 4mm;">Consignes</div>
+    <div style="padding:3mm 6mm;">${rows}</div></div>`;
+}
+
+function buildPreviewInner(bi, name, sub, teamRowsHTML, consignesHTML) {
+  return `<div style="text-align:center;margin-bottom:7mm;padding-bottom:5mm;border-bottom:2px solid #d4af37;">
+      <span style="font-size:20pt;color:#d4af37;display:block;line-height:1;margin-bottom:1mm;">★</span>
+      <span style="font-size:16pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#d4af37;display:block;margin-bottom:3mm;">${name}</span>
+      ${sub ? `<span style="font-size:10pt;color:#d4af37;display:block;margin-bottom:2mm;">${sub}</span>` : ''}
+      <div style="display:flex;align-items:center;justify-content:center;gap:4mm;">
+        <div style="display:flex;gap:1.5mm;align-items:center;">
+          <span style="display:block;height:2.5px;width:16mm;background:#d4af37;border-radius:2px;"></span>
+          <span style="display:block;height:2.5px;width:10mm;background:#d4af37;border-radius:2px;"></span>
+          <span style="display:block;height:2.5px;width:5mm;background:#d4af37;border-radius:2px;"></span>
+        </div>
+        <span style="font-size:48pt;font-weight:700;color:#f0d97a;line-height:.95;">${(boxNames[bi] || 'BOX '+(bi+1)).toUpperCase()}</span>
+        <div style="display:flex;gap:1.5mm;align-items:center;flex-direction:row-reverse;">
+          <span style="display:block;height:2.5px;width:16mm;background:#d4af37;border-radius:2px;"></span>
+          <span style="display:block;height:2.5px;width:10mm;background:#d4af37;border-radius:2px;"></span>
+          <span style="display:block;height:2.5px;width:5mm;background:#d4af37;border-radius:2px;"></span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:3mm;margin-top:2mm;">
+        <div style="flex:1;max-width:30mm;height:1px;background:rgba(212,175,55,.35);"></div>
+        <span style="font-size:7pt;color:#d4af37;">◆</span>
+        <div style="flex:1;max-width:30mm;height:1px;background:rgba(212,175,55,.35);"></div>
+      </div>
+    </div>
+    <div style="border:1.5px solid #d4af37;border-radius:5px;margin-bottom:5mm;overflow:hidden;">
+      <div style="background:#d4af37;color:#1c3b1c;text-align:center;font-size:11pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:2mm 4mm;">Équipes</div>
+      <div style="padding:3mm 6mm;">${teamRowsHTML}</div>
+    </div>
+    ${consignesHTML}`;
+}
+
+function syncFiches() {
+  const name = (document.getElementById('tournoi-name')?.value || 'LE PAN BAR — TOURNOI').toUpperCase();
+  const sub  = document.getElementById('tournoi-sub')?.value || '';
+  const raw  = document.getElementById('consignes-input')?.value || '';
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const consignesHTML = buildConsignesHTML(lines);
+
+  // Sync recap
+  const recapName = document.getElementById('recap-tournoi-name');
+  const recapSub  = document.getElementById('recap-tournoi-sub');
+  if (recapName) recapName.textContent = name;
+  if (recapSub)  recapSub.textContent  = sub;
+
+  // Mettre à jour fiches A4 (print) — nom + sous-titre
+  document.querySelectorAll('[id^="ft-tournoi-"]').forEach(el => el.textContent = name);
+  document.querySelectorAll('[id^="ft-sub-"]').forEach(el => el.textContent = sub);
+
+  // Consignes dans fiches A4
+  document.querySelectorAll('[id^="fiche-consignes-body-"]').forEach(el => {
+    el.innerHTML = lines.map((line, i) => {
+      const fmt = line.replace(/^([^:]+:)/, '<strong>$1</strong>');
+      return `<div class="fiche-consigne-row"><div class="fiche-consigne-num">${i+1}</div><div class="fiche-consigne-text">${fmt}</div></div>`;
+    }).join('');
+  });
+  document.querySelectorAll('[id^="fiche-consignes-"]:not([id*="body"])').forEach(el => {
+    el.style.display = lines.length ? '' : 'none';
+  });
+
+  // Previews écran — construites indépendamment avec styles inline
+  document.querySelectorAll('[id^="preview-"]').forEach(preview => {
+    const bi = parseInt(preview.id.replace('preview-', ''));
+    if (isNaN(bi)) return;
+    const ficheBody = document.querySelector(`#fiche-${bi} .fiche-bloc-body`);
+    const teamRowsHTML = ficheBody ? ficheBody.innerHTML : '';
+    preview.innerHTML = buildPreviewInner(bi, name, sub, teamRowsHTML, consignesHTML);
+  });
+}
+
+function printFiches() {
+  syncFiches();
+  window.print();
+}
+
+// Initialisation
+loadSavedData();
+calc();
+</script>
+</body>
+</html>
